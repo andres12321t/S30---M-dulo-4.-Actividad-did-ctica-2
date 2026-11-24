@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14532d">
+  <title>Solución de un problema de parqueaderos</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #14532d;
+      --blue: #15803d;
+      --teal: #047857;
+      --orange: #d97706;
+      --ink: #1f2937;
+      --muted: #64748b;
+      --line: #dbe5df;
+      --page: #f2f7f3;
+      --surface: #fff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font: 15px/1.6 "Segoe UI", Arial, sans-serif;
+    }
+    button, input { font: inherit; }
+    .hero {
+      padding: 38px 24px;
+      background: linear-gradient(120deg, #14532d, #166534 72%, #ca8a04);
+      color: #fff;
+    }
+    .hero-inner, .nav, main { width: min(1120px, calc(100% - 32px)); margin: auto; }
+    .hero-inner { display: flex; align-items: center; gap: 18px; }
+    .brand {
+      display: grid;
+      width: 58px;
+      height: 58px;
+      place-items: center;
+      border: 1px solid #ffffff70;
+      border-radius: 17px;
+      background: #ffffff20;
+      font-size: 30px;
+    }
+    h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); line-height: 1.2; }
+    .hero p { margin: 7px 0 0; color: #dcfce7; }
+    .nav-wrap {
+      position: sticky;
+      z-index: 3;
+      top: 0;
+      border-bottom: 1px solid var(--line);
+      background: #ffffffed;
+    }
+    .nav { display: flex; gap: 8px; padding: 9px 0; overflow-x: auto; }
+    .nav button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 13px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .nav button.active, .nav button:hover { background: #dcfce7; color: var(--navy); }
+    main { padding: 25px 0 50px; }
+    .page[hidden], [hidden] { display: none !important; }
+    .section { margin-bottom: 19px; }
+    .grid { display: grid; gap: 15px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .panel, .stat-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: 0 8px 23px #173b570d;
+    }
+    .panel { padding: 20px; }
+    .stat-card { min-height: 112px; padding: 16px; }
+    .stat-label { color: var(--muted); font-size: 13px; font-weight: 650; }
+    .stat-value { margin-top: 6px; color: var(--navy); font-size: 24px; font-weight: 750; }
+    .stat-note { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 13px;
+    }
+    h2 { margin: 0; color: var(--navy); font-size: 22px; }
+    h3 { margin: 0 0 8px; color: var(--navy); font-size: 17px; }
+    p { margin: 7px 0; }
+    .muted, .note { color: var(--muted); }
+    .note { font-size: 12px; }
+    .callout {
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--blue);
+      border-radius: 10px;
+      background: #eff6ff;
+      padding: 14px 16px;
+    }
+    .callout.success { border-color: #bde4d8; border-left-color: var(--teal); background: #effaf6; }
+    .callout.warning { border-color: #f0ddbd; border-left-color: var(--orange); background: #fff9ef; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { padding: 10px 11px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { background: #ecfdf5; color: var(--navy); font-size: 12px; }
+    tr:last-child td { border-bottom: 0; }
+    td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 13px; margin-top: 16px; }
+    label { display: block; margin-bottom: 5px; color: var(--navy); font-size: 13px; font-weight: 700; }
+    input {
+      width: 100%;
+      min-height: 43px;
+      border: 1px solid #cbd9df;
+      border-radius: 8px;
+      padding: 8px 11px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .button {
+      min-height: 43px;
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 16px;
+      background: var(--navy);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .button:hover { background: #166534; }
+    .button:disabled { opacity: .65; cursor: wait; }
+    .status { min-height: 26px; margin-top: 10px; }
+    .status.error { color: #b42318; }
+    .status.success { color: #087443; }
+    .chart { display: block; width: 100%; height: auto; margin-top: 10px; border: 1px solid var(--line); border-radius: 9px; }
+    .downloads { display: flex; flex-wrap: wrap; gap: 10px; }
+    .download {
+      display: inline-block;
+      border: 1px solid #bed3db;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--navy);
+      text-decoration: none;
+      font-weight: 650;
+    }
+    .download:hover { background: #ecfdf5; }
+    .badge { display: inline-block; border-radius: 999px; padding: 3px 9px; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 700; }
+    .footer { margin-top: 24px; text-align: center; color: var(--muted); font-size: 12px; }
+    @media (max-width: 760px) {
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .hero { padding: 27px 0; }
+      .brand { width: 48px; height: 48px; flex-basis: 48px; font-size: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="brand" aria-hidden="true">🅿️</div>
+      <div>
+        <h1>Solución de un problema de parqueaderos</h1>
+        <p>Simulación de filas independientes para el pago en las salidas.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="nav-wrap">
+    <nav class="nav" aria-label="Secciones del proyecto">
+      <button class="active" data-page="inicio">Resumen</button>
+      <button data-page="simulacion">Ejecutar</button>
+      <button data-page="resultados">Resultados</button>
+      <button data-page="metodo">Método y validación</button>
+    </nav>
+  </div>
+
+  <main>
+    <section class="page" id="page-inicio">
+      <div class="panel section">
+        <div class="section-heading">
+          <div>
+            <h2>Problema y objetivo</h2>
+            <p class="muted">Evaluar si tres cajeros independientes por salida pueden atender la demanda de pago del centro comercial.</p>
+          </div>
+          <span class="badge">3 filas · sin deserción</span>
+        </div>
+        <p>El usuario digita la placa, selecciona su vehículo y realiza el pago. Cada cajero opera con su propia fila FIFO; los usuarios no cambian de fila ni abandonan el sistema.</p>
+      </div>
+
+      <div class="grid grid-4 section">
+        <article class="stat-card"><div class="stat-label">Usuarios rápidos</div><div class="stat-value">25 %</div><div class="stat-note">Servicio medio: 1 min</div></article>
+        <article class="stat-card"><div class="stat-label">Usuarios normales</div><div class="stat-value">20 %</div><div class="stat-note">Servicio medio: 3 min</div></article>
+        <article class="stat-card"><div class="stat-label">Usuarios lentos</div><div class="stat-value">27,5 %</div><div class="stat-note">Servicio medio: 4 min</div></article>
+        <article class="stat-card"><div class="stat-label">Muy lentos</div><div class="stat-value">27,5 %</div><div class="stat-note">Servicio medio: 6 min</div></article>
+      </div>
+
+      <div class="grid grid-2 section">
+        <article class="panel">
+          <h3>Parámetros de la actividad</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tipo de usuario</th><th>Probabilidad</th><th>Media de llegada (min)</th><th>Media de servicio (min)</th></tr></thead>
+              <tbody>
+                <tr><td>Rápido</td><td>25 %</td><td>3</td><td>1</td></tr>
+                <tr><td>Normal</td><td>20 %</td><td>3</td><td>3</td></tr>
+                <tr><td>Lento</td><td>27,5 %</td><td>5</td><td>4</td></tr>
+                <tr><td>Muy lento</td><td>27,5 %</td><td>7</td><td>6</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">La instrucción no separa el 55 % restante; para esta corrida se dividió por igual entre usuarios lentos y muy lentos. Es un supuesto editable si el docente entrega otro reparto.</p>
+        </article>
+        <article class="panel">
+          <h3>Criterios del estudio</h3>
+          <ul>
+            <li>Colas FIFO independientes; asignación aleatoria entre los cajeros disponibles.</li>
+            <li>3.000 vehículos por réplica, repartidos entre los cajeros.</li>
+            <li>Se comparan 3 y 4 cajeros con las mismas llegadas por réplica.</li>
+            <li>Se descartan los primeros 30 servicios de cada cajero y réplica para reducir el sesgo inicial.</li>
+            <li>La estabilidad se comprueba por bloques de 10 réplicas.</li>
+          </ul>
+        </article>
+      </div>
+      <div class="callout">
+        <strong>Decisión operativa</strong>
+        <p>Se recomienda ampliar a cuatro cajeros solo si el promedio de espera baja al menos 10 % y el intervalo de confianza del 95 % de la reducción queda por encima de cero. El costo de instalar un cajero no está incluido.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-simulacion" hidden>
+      <div class="section-heading">
+        <div><h2>Ejecutar simulación</h2><p class="muted">El cálculo detiene las réplicas cuando se alcanza estabilidad o al llegar al límite elegido.</p></div>
+      </div>
+      <div class="panel section">
+        <div class="callout">
+          <strong>Regla de estabilidad</strong>
+          <p>Se monitorea el promedio acumulado de espera del escenario actual de tres cajeros. Se considera estable si su cambio relativo es menor o igual a 1 % durante 5 comprobaciones consecutivas, hechas cada 10 réplicas.</p>
+        </div>
+        <form id="simulation-form" class="form-grid">
+          <div>
+            <label for="max-replicates">Máximo de réplicas</label>
+            <input id="max-replicates" type="number" min="60" max="500" step="10" value="200" required>
+          </div>
+          <div>
+            <label for="seed">Semilla aleatoria</label>
+            <input id="seed" type="number" step="1" value="2026" required>
+          </div>
+          <button class="button" id="run-button" type="submit">Ejecutar y graficar</button>
+        </form>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-resultados" hidden>
+      <div id="results-placeholder" class="panel">
+        <h2>Resultados del modelo</h2>
+        <p>Ejecuta la simulación para obtener estadísticas, gráficas y archivos de salida.</p>
+        <button class="button" data-go="simulacion">Ir a ejecutar</button>
+      </div>
+
+      <div id="results-content" hidden>
+        <div class="section-heading">
+          <div><h2>Resultados y decisión</h2><p class="muted" id="run-meta"></p></div>
+          <span class="badge" id="stability-badge"></span>
+        </div>
+        <div class="grid grid-3 section" id="decision-cards"></div>
+        <div class="callout section" id="recommendation"></div>
+
+        <section class="panel section">
+          <h3>Convergencia de la espera promedio</h3>
+          <p class="note">La media acumulada se revisa cada diez réplicas. La línea vertical señala el número de réplicas utilizado.</p>
+          <img class="chart" id="convergence-chart" alt="Gráfica de convergencia de las esperas promedio">
+        </section>
+
+        <div class="grid grid-2 section">
+          <section class="panel">
+            <h3>Comparación de escenarios</h3>
+            <div class="table-wrap"><table id="scenario-table"></table></div>
+          </section>
+          <section class="panel">
+            <h3>Usuarios promedio por tipo</h3>
+            <div class="table-wrap"><table id="type-table"></table></div>
+          </section>
+        </div>
+
+        <section class="panel section">
+          <h3>Estadísticas de los tres cajeros actuales</h3>
+          <p class="note">La columna de atención destaca el menor y el mayor promedio para responder el criterio A.</p>
+          <div class="table-wrap"><table id="cashier-table"></table></div>
+        </section>
+
+        <div class="grid grid-2 section">
+          <section class="panel">
+            <h3>Antes y después de eliminar el transitorio</h3>
+            <div class="table-wrap"><table id="warmup-table"></table></div>
+          </section>
+          <section class="panel">
+            <h3>Gráfica de promedios antes y después</h3>
+            <img class="chart" id="warmup-chart" alt="Comparación de medias antes y después de descartar el estado transitorio">
+          </section>
+        </div>
+
+        <section class="panel section">
+          <h3>Usuarios por tipo en cada réplica</h3>
+          <p class="note">Se muestran las primeras 30 réplicas en la página; el archivo CSV incluye todas las utilizadas.</p>
+          <div class="table-wrap"><table id="replication-table"></table></div>
+        </section>
+
+        <section class="panel">
+          <h3>Archivos de resultados</h3>
+          <div class="downloads">
+            <a class="download" href="/files/resultados_parqueadero_resumen.csv">Resumen CSV</a>
+            <a class="download" href="/files/resultados_parqueadero_replicas.csv">Detalle CSV</a>
+            <a class="download" href="/files/resultados_parqueadero_convergencia.png">Convergencia PNG</a>
+            <a class="download" href="/files/resultados_parqueadero_antes_despues.png">Antes y después PNG</a>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="page" id="page-metodo" hidden>
+      <div class="grid grid-2 section">
+        <article class="panel">
+          <h2>Proceso del modelo</h2>
+          <ol>
+            <li>Se selecciona el tipo de usuario con las probabilidades declaradas.</li>
+            <li>Se genera un tiempo exponencial entre llegadas y de servicio, usando la media de la tabla.</li>
+            <li>El vehículo se asigna al azar a una fila habilitada; cada cajero conserva su propio tiempo de disponibilidad.</li>
+            <li>Se registran espera, servicio, ocupación y cantidad por tipo.</li>
+            <li>Las mismas llegadas se reproducen con 3 y 4 cajeros para hacer una comparación emparejada.</li>
+          </ol>
+        </article>
+        <article class="panel">
+          <h2>Verificación, calibración y validación</h2>
+          <ul>
+            <li><strong>Calibración:</strong> las medias y porcentajes se transcriben de la actividad; el 55 % no desglosado se divide en partes iguales.</li>
+            <li><strong>Verificación:</strong> se comprueban asignación a una sola cola, orden FIFO, ausencia de tiempos negativos y reproducibilidad por semilla.</li>
+            <li><strong>Validación:</strong> se comparan las esperas simuladas con indicadores teóricos M/M/1 y se revisa la convergencia entre réplicas.</li>
+          </ul>
+        </article>
+      </div>
+      <div class="callout warning section">
+        <strong>Supuesto sobre M/M/1</strong>
+        <p>Las filas son servidores individuales con llegadas y servicios exponenciales condicionados por tipo. Al combinar tipos con distintas medias, el flujo agregado no es un M/M/1 homogéneo exacto; por ello, λ, μ, ρ, Wq y Lq son referencias aproximadas. La decisión prioriza los tiempos medidos directamente por simulación.</p>
+      </div>
+      <div class="panel">
+        <h3>Criterio para instalar un cajero adicional</h3>
+        <p>Se recomienda el cuarto cajero si la reducción emparejada de espera es estadísticamente positiva (límite inferior del IC 95 % mayor que cero) y alcanza al menos 10 %. Si no se cumplen ambas condiciones, se considera suficiente mantener tres en esta evaluación y se recomienda revisar más datos.</p>
+      </div>
+    </section>
+
+    <p class="footer">Simulación académica · Python · Los promedios dependen de la semilla y del número de réplicas.</p>
+  </main>
+
+  <script>
+    const navButtons = [...document.querySelectorAll(".nav button")];
+    const pages = [...document.querySelectorAll(".page")];
+    const form = document.getElementById("simulation-form");
+    const runButton = document.getElementById("run-button");
+    const statusBox = document.getElementById("status");
+
+    function showPage(name) {
+      pages.forEach(page => { page.hidden = page.id !== `page-${name}`; });
+      navButtons.forEach(button => button.classList.toggle("active", button.dataset.page === name));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    navButtons.forEach(button => button.addEventListener("click", () => showPage(button.dataset.page)));
+    document.querySelectorAll("[data-go]").forEach(button => {
+      button.addEventListener("click", () => showPage(button.dataset.go));
+    });
+
+    function fmt(value, digits = 2) {
+      return new Intl.NumberFormat("es-CO", {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      }).format(value);
+    }
+
+    function renderTable(table, headers, rows) {
+      table.replaceChildren();
+      const thead = document.createElement("thead");
+      const header = document.createElement("tr");
+      headers.forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        header.appendChild(th);
+      });
+      thead.appendChild(header);
+      table.appendChild(thead);
+      const tbody = document.createElement("tbody");
+      rows.forEach(values => {
+        const row = document.createElement("tr");
+        values.forEach((value, index) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          if (index > 0) cell.className = "numeric";
+          row.appendChild(cell);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+    }
+
+    function renderResults(data) {
+      document.getElementById("results-placeholder").hidden = true;
+      document.getElementById("results-content").hidden = false;
+      document.getElementById("run-meta").textContent =
+        `Semilla ${data.seed} · ${data.customersPerReplication.toLocaleString("es-CO")} vehículos por réplica · warm-up: ${data.warmupCustomersPerCashier} por cajero`;
+      const badge = document.getElementById("stability-badge");
+      badge.textContent = data.converged
+        ? `Estable en ${data.replications} réplicas`
+        : `Sin estabilidad al máximo de ${data.replications}`;
+
+      const cards = document.getElementById("decision-cards");
+      cards.replaceChildren();
+      [
+        ["Espera media · 3 cajeros", data.scenarios[0].wait.mean, "min"],
+        ["Espera media · 4 cajeros", data.scenarios[1].wait.mean, "min"],
+        ["Cajeros requeridos", data.decision.recommendFour ? "4" : "3", data.decision.recommendFour ? "ampliar por salida" : "mantener por salida"]
+      ].forEach(([label, value, note]) => {
+        const card = document.createElement("article");
+        card.className = "stat-card";
+        const title = document.createElement("div");
+        title.className = "stat-label";
+        title.textContent = label;
+        const main = document.createElement("div");
+        main.className = "stat-value";
+        main.textContent = typeof value === "number" ? `${fmt(value)} ${note}` : value;
+        const detail = document.createElement("div");
+        detail.className = "stat-note";
+        detail.textContent = typeof value === "number" ? `IC 95 % ${fmt(label.includes("3") ? data.scenarios[0].wait.low : data.scenarios[1].wait.low)}–${fmt(label.includes("3") ? data.scenarios[0].wait.high : data.scenarios[1].wait.high)} min` : note;
+        card.append(title, main, detail);
+        cards.appendChild(card);
+      });
+
+      const recommendation = document.getElementById("recommendation");
+      recommendation.className = `callout section ${data.decision.recommendFour ? "success" : "warning"}`;
+      recommendation.replaceChildren();
+      const title = document.createElement("strong");
+      title.textContent = data.decision.recommendFour
+        ? "Se recomienda instalar un cuarto cajero"
+        : "La evidencia no recomienda ampliar todavía";
+      const detail = document.createElement("p");
+      detail.textContent =
+        `La reducción emparejada de espera fue ${fmt(data.decision.meanReductionMinutes)} min (${fmt(data.decision.relativeReductionPct, 1)} %), IC 95 % ${fmt(data.decision.reduction.low)}–${fmt(data.decision.reduction.high)} min. Criterio: reducción mínima de ${fmt(data.decision.thresholdPct, 0)} % y límite inferior del intervalo mayor que cero.`;
+      recommendation.append(title, detail);
+
+      renderTable(
+        document.getElementById("scenario-table"),
+        ["Configuración", "Espera media (min)", "Desv. est.", "IC 95 %"],
+        data.scenarios.map(row => [
+          row.label, fmt(row.wait.mean), fmt(row.wait.sd),
+          `${fmt(row.wait.low)}–${fmt(row.wait.high)}`
+        ])
+      );
+
+      renderTable(
+        document.getElementById("type-table"),
+        ["Usuario", "Probabilidad", "Promedio por réplica", "Mínimo", "Réplica(s)"],
+        data.usersByType.map(row => [
+          row.category, `${fmt(row.probability * 100, 1)} %`,
+          fmt(row.averagePerReplication, 0), row.minimum,
+          row.minimumReplications.join(", ")
+        ])
+      );
+
+      renderTable(
+        document.getElementById("cashier-table"),
+        ["Cajero", "Vehículos promedio", "Atención (min)", "Espera (min)", "Uso", "ρ", "Estabilidad M/M/1", "Atención extrema"],
+        data.cashiersThree.map(row => {
+          const extremes = [];
+          if (row.cashier === data.fastestCashier.cashier) extremes.push("Menor");
+          if (row.cashier === data.slowestCashier.cashier) extremes.push("Mayor");
+          return [
+            `Cajero ${row.cashier}`,
+            fmt(row.averageCustomers),
+            fmt(row.service.mean),
+            fmt(row.wait.mean),
+            `${fmt(row.utilization * 100, 1)} %`,
+            fmt(row.queueing.rho, 3),
+            row.queueing.stable ? "Estable" : "Inestable",
+            extremes.join(" y ") || "—"
+          ];
+        })
+      );
+
+      renderTable(
+        document.getElementById("warmup-table"),
+        ["Cajero", "Espera antes", "Espera después", "Atención antes", "Atención después"],
+        data.beforeAfter.map(row => [
+          `Cajero ${row.cashier}`,
+          fmt(row.before.wait), fmt(row.after.wait),
+          fmt(row.before.service), fmt(row.after.service)
+        ])
+      );
+
+      renderTable(
+        document.getElementById("replication-table"),
+        ["Réplica", ...Object.keys(data.replicationCounts[0].counts), "Total"],
+        data.replicationCounts.map(row => [
+          row.replication,
+          ...Object.values(row.counts),
+          row.total
+        ])
+      );
+
+      const stamp = `?t=${Date.now()}`;
+      document.getElementById("convergence-chart").src =
+        `/files/${data.files.convergenceChart}${stamp}`;
+      document.getElementById("warmup-chart").src =
+        `/files/${data.files.warmupChart}${stamp}`;
+      showPage("resultados");
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const maxReplicates = Number(document.getElementById("max-replicates").value);
+      const seed = Number(document.getElementById("seed").value);
+      if (!Number.isInteger(maxReplicates) || maxReplicates < 60 || maxReplicates > 500 || maxReplicates % 10 !== 0) {
+        statusBox.className = "status error";
+        statusBox.textContent = "Ingresa un máximo de réplicas múltiplo de 10, entre 60 y 500.";
+        return;
+      }
+      if (!Number.isSafeInteger(seed)) {
+        statusBox.className = "status error";
+        statusBox.textContent = "La semilla debe ser un número entero válido.";
+        return;
+      }
+
+      runButton.disabled = true;
+      runButton.textContent = "Simulando…";
+      statusBox.className = "status";
+      statusBox.textContent = "Ejecutando réplicas, verificando estabilidad y generando gráficas…";
+      try {
+        const response = await fetch("/api/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ maxReplicates, seed })
+        });
+        const responseText = await response.text();
+        let result;
+        try {
+          result = responseText ? JSON.parse(responseText) : null;
+        } catch {
+          throw new Error(`Respuesta no válida del servidor (HTTP ${response.status}). Reinicia app_parqueadero.py.`);
+        }
+        if (!result || typeof result !== "object") {
+          throw new Error(`Respuesta vacía del servidor (HTTP ${response.status}). Reinicia app_parqueadero.py.`);
+        }
+        if (!response.ok) throw new Error(result.error || `Error HTTP ${response.status}.`);
+        renderResults(result);
+        statusBox.className = "status success";
+        statusBox.textContent = `Simulación completada con ${result.replications} réplicas.`;
+      } catch (error) {
+        statusBox.className = "status error";
+        statusBox.textContent = error.message || "Error de conexión con la aplicación Python.";
+      } finally {
+        runButton.disabled = false;
+        runButton.textContent = "Ejecutar y graficar";
+      }
+    });
+  </script>
+</body>
+</html>

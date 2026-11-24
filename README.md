@@ -1,65 +1,98 @@
-# SOLUCIÓN DE UN PROBLEMA BANCARIO
+# Solución de un problema de parqueaderos
 
-Aplicación local con interfaz web y motor de simulación en Python. La página
-presenta el contexto, los datos de las tablas, los controles de ejecución,
-comparaciones, estadísticas, tablas por réplica y gráficas.
+Simulación en Python de las filas de pago de una salida del centro comercial
+Supercentro. Compara tres cajeros independientes con una alternativa de cuatro,
+estima cuántas réplicas se requieren para estabilizar el promedio de espera y
+presenta resultados antes y después de retirar el estado transitorio.
 
-## Iniciar la interfaz
+## Datos del enunciado
 
-1. Abre PowerShell en esta carpeta.
-2. Ejecuta:
+| Tipo de usuario | Probabilidad usada | Media entre llegadas (min) | Media de servicio (min) |
+|---|---:|---:|---:|
+| Rápido | 25 % | 3 | 1 |
+| Normal | 20 % | 3 | 3 |
+| Lento | 27,5 % | 5 | 4 |
+| Muy lento | 27,5 % | 7 | 6 |
 
-   ```powershell
-   python .\app_bancaria.py
-   ```
+El enunciado asigna el 55 % restante conjuntamente a usuarios lentos y muy
+lentos, sin especificar el reparto. Para poder simular, se asumió una división
+igual: 27,5 % para cada grupo. Cada réplica genera 3.000 vehículos y asigna
+cada uno aleatoriamente a una fila FIFO independiente. No se modelan cambios
+de fila, abandono ni varias salidas con demandas diferentes; se analiza una
+salida representativa.
 
-3. La aplicación abre el navegador en `http://127.0.0.1:8765`.
-4. Elige al menos 10 réplicas y una semilla, y selecciona **Ejecutar
-   comparación**.
-5. Para cerrar el servidor local, vuelve a PowerShell y presiona `Ctrl+C`.
+## Ejecución
 
-No requiere instalar paquetes. Usa únicamente la biblioteca estándar de
-Python y escucha solo en el equipo local.
-
-## Entregables
-
-- [Interfaz web](./interfaz_bancaria.html)
-- [Servidor local y API](./app_bancaria.py)
-- [Motor de simulación](./simulacion_bancaria.py)
-
-Al ejecutar una comparación, la aplicación genera los CSV y las gráficas SVG
-que ofrece para descargar.
-
-La aplicación compara tres cajas mixtas, las dos distribuciones exclusivas de
-tres cajeros y tres alternativas con cuatro cajeros. Reporta promedios,
-desviaciones estándar e intervalos de confianza del 95 %.
-También estima λ, μ y ρ por cajero, comprueba la estabilidad M/M/1 y muestra
-Wq y Lq teóricos como referencia de tasa promedio.
-
-## Ejecución por terminal
-
-El motor también se puede ejecutar sin interfaz:
+Requiere Python 3.10 o posterior y Matplotlib:
 
 ```powershell
-python .\simulacion_bancaria.py --replicaciones 10 --semilla 2026
+python -m pip install -r requirements.txt
+python .\app_parqueadero.py
 ```
 
-Opciones disponibles:
+La aplicación abre `http://127.0.0.1:8765`. Ingresa un máximo de réplicas
+múltiplo de 10 (entre 60 y 500) y una semilla. También se puede ejecutar por
+terminal:
 
 ```powershell
-python .\simulacion_bancaria.py --replicaciones 100 --semilla 2026 --prefijo resultados_simulacion
+python .\simulacion_parqueadero.py --max-replicas 200 --semilla 2026
 ```
 
-## Interpretación del modelo
+## Estabilidad y estado transitorio
 
-Las llegadas y los tiempos de servicio se generan con distribuciones
-exponenciales condicionadas a la acción y categoría de usuario, usando las
-medias de la actividad. Cada cajero mantiene una cola independiente. Dado que
-las medias cambian entre categorías, el flujo combinado es una mezcla y no un
-M/M/1 homogéneo con una sola tasa común; el programa conserva los parámetros
-específicos provistos en el enunciado.
+El programa comprueba cada 10 réplicas el cambio relativo del promedio
+acumulado de espera del sistema actual de tres cajeros. Declara estabilidad
+cuando el cambio es como máximo 1 % durante cinco comprobaciones consecutivas.
+También se grafica la convergencia de la alternativa de cuatro cajeros para
+facilitar su comparación. Si no alcanza el criterio, informa que llegó al
+máximo solicitado sin converger.
 
-Las llegadas, categorías y tiempos de servicio de cada réplica se reutilizan
-para comparar las configuraciones en condiciones equivalentes. La decisión
-sobre un cuarto cajero se basa en diferencias emparejadas de espera y sus
-intervalos de confianza.
+En cada réplica se excluyen los primeros 30 servicios de cada cajero del
+promedio principal para reducir el sesgo de iniciar la cola vacía. La tabla y
+la gráfica comparan promedios calculados con todos los vehículos frente a los
+calculados después de retirar ese tramo transitorio.
+
+## Decisión y alcance del modelo
+
+Se recomienda instalar un cuarto cajero si la reducción emparejada de la espera
+es al menos 10 % y el límite inferior de su intervalo de confianza del 95 % es
+mayor que cero. Las mismas llegadas, tipos, tiempos de servicio y sorteos de
+asignación se reutilizan para comparar escenarios.
+
+Cada cajero tiene una cola FIFO propia y tiempos exponenciales condicionados al
+tipo de usuario. Como las medias cambian entre tipos, la mezcla agregada no es
+un M/M/1 homogéneo exacto. Los valores analíticos de estabilidad y espera
+M/M/1 se reportan como referencias; la espera medida directamente por la
+simulación es el resultado principal. La recomendación no incorpora el costo
+de instalar cajeros.
+
+## Verificación, calibración y validación
+
+- **Calibración:** los promedios y probabilidades de la tabla son los del
+  enunciado; se comprueba que las probabilidades sumen 100 %.
+- **Verificación:** pruebas automatizadas comprueban asignación a una sola
+  fila, orden FIFO, ausencia de tiempos negativos y resultados reproducibles
+  para una semilla fija.
+- **Validación:** se compara la convergencia entre réplicas y se contrasta la
+  simulación con las referencias teóricas M/M/1, considerando sus limitaciones
+  para usuarios con distintas medias.
+
+## Archivos generados
+
+Al ejecutar una comparación se generan:
+
+- `resultados_parqueadero_resumen.csv`: estadísticas por cajero y tipo.
+- `resultados_parqueadero_replicas.csv`: conteos y esperas de cada réplica.
+- `resultados_parqueadero_convergencia.png`: promedio acumulado y criterio de
+  estabilidad.
+- `resultados_parqueadero_antes_despues.png`: espera y servicio antes y después
+  de retirar el transitorio.
+
+Las gráficas se crean con Matplotlib y se muestran en la interfaz; los cuatro
+archivos también se pueden descargar desde la página.
+
+## Pruebas
+
+```powershell
+python -m unittest discover -s tests -v
+```
